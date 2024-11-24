@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Canciones</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container my-5">
+    <h1 class="text-center">Gestión de Canciones</h1>
+
+    <!-- Formulario para agregar canciones -->
+    <div class="card my-4">
+      <div class="card-body">
+        <h3>Agregar Canción</h3>
+        <form id="addSongForm">
+          <div class="mb-3">
+            <label for="titulo" class="form-label">Título</label>
+            <input type="text" id="titulo" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="artista" class="form-label">Artista</label>
+            <input type="text" id="artista" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label for="tono" class="form-label">Tono</label>
+            <input type="text" id="tono" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Agregar</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Tabla de canciones -->
+    <h3>Lista de Canciones</h3>
+    <table class="table table-striped" id="songsTable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Título</th>
+          <th>Artista</th>
+          <th>Tono</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Las canciones serán generadas dinámicamente -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const apiUrl = "http://localhost:5500/canciones";
+
+    // Cargar canciones al cargar la página
+    async function loadSongs() {
+      const response = await fetch(apiUrl);
+      const songs = await response.json();
+      const tableBody = document.querySelector("#songsTable tbody");
+      tableBody.innerHTML = "";
+
+      songs.forEach((song) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${song.id}</td>
+          <td>${song.titulo}</td>
+          <td>${song.artista}</td>
+          <td>${song.tono}</td>
+          <td>
+            <button class="btn btn-warning btn-sm" onclick="editSong(${song.id})">Editar</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteSong(${song.id})">Eliminar</button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // Agregar canción
+    document.getElementById("addSongForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const titulo = document.getElementById("titulo").value;
+      const artista = document.getElementById("artista").value;
+      const tono = document.getElementById("tono").value;
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ titulo, artista, tono }),
+      });
+
+      if (response.ok) {
+        alert("Canción agregada exitosamente");
+        e.target.reset();
+        loadSongs();
+      } else {
+        alert("Error al agregar la canción");
+      }
+    });
+
+    // Editar canción (solicitar datos y actualizar)
+    async function editSong(id) {
+      const titulo = prompt("Nuevo título:");
+      const artista = prompt("Nuevo artista:");
+      const tono = prompt("Nuevo tono:");
+
+      if (titulo && artista && tono) {
+        const response = await fetch(`${apiUrl}/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ titulo, artista, tono }),
+        });
+
+        if (response.ok) {
+          alert("Canción editada exitosamente");
+          loadSongs();
+        } else {
+          alert("Error al editar la canción");
+        }
+      }
+    }
+
+    // Eliminar canción
+    async function deleteSong(id) {
+      const confirmDelete = confirm("¿Estás seguro de eliminar esta canción?");
+      if (confirmDelete) {
+        const response = await fetch(`${apiUrl}/${id}`, { method: "DELETE" });
+
+        if (response.ok) {
+          alert("Canción eliminada exitosamente");
+          loadSongs();
+        } else {
+          alert("Error al eliminar la canción");
+        }
+      }
+    }
+
+    // Inicializar la página
+    loadSongs();
+  </script>
+</body>
+</html>
